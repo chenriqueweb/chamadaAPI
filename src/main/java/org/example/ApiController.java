@@ -1,10 +1,16 @@
 package org.example;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,8 +19,6 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 public class ApiController {
 
-    @Autowired
-    private RestClientConfiguration restClientConfiguration;
 
     @GetMapping("/msTemplate")
     public String chamarAPI(@RequestParam String parametro) throws Exception {
@@ -28,9 +32,7 @@ public class ApiController {
 
         // Criando um objeto RestTemplate
         RestTemplate restTemplate = new RestTemplate();
-
-        RestClientConfiguration restClientConfiguration = new RestClientConfiguration();
-        restClientConfiguration.restTemplate();
+        restTemplate();
 
         // Adicionando o cabeçalho de autorização
         HttpHeaders headers = new HttpHeaders();
@@ -42,5 +44,19 @@ public class ApiController {
 
         // Retornando a resposta da API
         return resposta.getBody();
+    }
+
+    @Bean
+    public void restTemplate() {
+        // Crie um HttpClient personalizado com verificação de certificado desabilitada
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(new PoolingHttpClientConnectionManager())
+                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .build();
+
+        // Use o HttpClient para criar um ClientHttpRequestFactory
+        ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+
+        new RestTemplate(requestFactory);
     }
 }
